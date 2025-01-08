@@ -9,7 +9,7 @@ const {
   checkPendingFines,
   getAvailableBooks,
   getBookLocation,
-  getGeneralKnowledge
+  generateBookSummary,
 } = require('./helpers');  // Import from helpers.js
 
 const callTools = async (prompt, authData = { id: "123" }) => {
@@ -93,32 +93,20 @@ const callTools = async (prompt, authData = { id: "123" }) => {
           return getAvailableBooks();  // Uses helper function
         },
       }),
-    //   getInfoAbout: tool({
-    //     description: 'If user asks for information such as abstract, introduction, reviews, ratings, or summaries of a book, provide a generic response',
-    //     parameters: z.object({
-    //       userPrompt: z.string().describe('The user query or prompt'),
-    //       author: z.string().optional().describe('The author of the book'),
-    //       title: z.string().optional().describe('The title of the book'),
-    //     }),
-    //     execute: async ({userPrompt, author, title}) => {
-          
-    //       const resource = y()
-          
-    //       const x = await generateText({
-    //         model: llama,
-    //         system: `You are a book lover, and you need to repond to queries such as abstract, introduction, reviews, ratings, or summaries of a book, provide a generic response`,
-    //         prompt: `Data: ${resource.data}\nUser Prompt: ${userPrompt}\nResponse:`
-    //       })
-          
-    //       console.log(userPrompt, x.text);
-          
-    //       return {
-    //         isFromDB: resource.db,
-    //         response: x.text
-    //       }
-    //       // return getAvailableBooks();  // Uses helper function
-    //     },
-    //   }),
+      generateSummary: tool({
+        description: 'Generate a summary for a book based on its title.',
+        parameters: z.object({
+          title: z.string().describe('The title of the book to generate a summary for'),
+        }),
+        execute: async ({ title }) => {
+          try {
+            const summary = await generateBookSummary(title);
+            return { summary };
+          } catch (error) {
+            return { error: 'Unable to generate summary.' };
+          }
+        },
+      }),
     },
     prompt: prompt,
     toolChoice: "required",

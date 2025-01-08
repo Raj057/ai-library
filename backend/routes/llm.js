@@ -8,7 +8,7 @@ const router = express.Router();
 // Handle incoming queries from the frontend
 router.post('/query', async (req, res) => {
   const { query, userType, studentId } = req.body;
-
+  console.log(query, userType, studentId);
   try {
     const authData = { id: studentId };
     const result = await callTools(query, authData);

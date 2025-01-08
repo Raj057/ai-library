@@ -5,27 +5,61 @@ const BorrowedBook = require('../models/BorrowedBooks');  // Import the Borrowed
 // Helper function to check borrowed books by student ID
 const checkBorrowedBooks = async (studentId) => {
   try {
-    // Find all borrowed books for the student where return_date is null (not returned)
-    const borrowedBooks = await BorrowedBook.find({ student_id: studentId, return_date: null }).populate('book_id');
-    
-    if (!borrowedBooks || borrowedBooks.length === 0) {
-      return { message: 'No borrowed books found for this student.' };
-    }
+    const borrowedBooks = await BorrowedBook.find({ student_id: studentId, return_date: null })
+      .populate('book_id', 'title author genre section column');
 
-    // Map the borrowed books and include additional information (due date, fine)
-    return borrowedBooks.map(borrowedBook => ({
-      title: borrowedBook.book_id.title,
-      author: borrowedBook.book_id.author,
-      genre: borrowedBook.book_id.genre,
-      section: borrowedBook.book_id.section,
-      column: borrowedBook.book_id.column,
-      borrow_date: borrowedBook.borrow_date,
-      due_date: borrowedBook.due_date,
-      fine: borrowedBook.fine,  // Fine should be calculated based on due date
+    return borrowedBooks.map(book => ({
+      title: book.book_id.title,
+      author: book.book_id.author,
+      genre: book.book_id.genre,
+      section: book.book_id.section,
+      column: book.book_id.column,
+      borrow_date: book.borrow_date,
+      due_date: book.due_date,
+      fine: book.fine,
     }));
   } catch (error) {
     console.error('Error checking borrowed books:', error);
     throw error;
+  }
+};
+
+// Function to calculate and check pending fines
+const checkPendingFines = async (studentId) => {
+  try {
+    const borrowedBooks = await BorrowedBook.find({ student_id: studentId, return_date: null });
+    let totalFine = 0;
+
+    borrowedBooks.forEach(borrowedBook => {
+      const now = new Date();
+      const daysLate = Math.floor((now - borrowedBook.due_date) / (1000 * 60 * 60 * 24));
+      if (daysLate > 0) {
+        totalFine += daysLate * 10;
+      }
+    });
+
+    return { totalFine };
+  } catch (error) {
+    console.error('Error checking pending fines:', error);
+    throw error;
+  }
+};
+
+// Function to update fines daily (Auto-run)
+const updateFinesDaily = async () => {
+  try {
+    const borrowedBooks = await BorrowedBook.find({ return_date: null });
+    borrowedBooks.forEach(async (book) => {
+      const now = new Date();
+      const daysLate = Math.floor((now - book.due_date) / (1000 * 60 * 60 * 24));
+      if (daysLate > 0) {
+        book.fine = daysLate * 10;
+        await book.save();
+      }
+    });
+    console.log('Fines updated successfully');
+  } catch (error) {
+    console.error('Error updating fines daily:', error);
   }
 };
 
@@ -72,17 +106,39 @@ const searchBookByAuthor = async (author) => {
 };
 
 
-const generateBookSummary = async (book) => {
+const axios = require('axios');
+const dotenv = require('dotenv');
+dotenv.config();
+
+// Function to fetch summary for a book (whether present in DB or not)
+const generateBookSummary = async (title) => {
   try {
-    const response = await axios.post('http://localhost:5000/api/llm/generateSummary', {
-      title: book.title,
-      author: book.author,
-      genre: book.genre,
-    });
-    return response.data.summary;
+    // First, check if the book is present in the local database
+    const book = await Book.findOne({ title: new RegExp(title, 'i') });
+
+    let summary;
+    if (book) {
+      // Generate summary for books in the database using LLM
+      const prompt = `Generate a brief 3-sentence summary for the book titled '${book.title}' authored by ${book.author}, categorized as ${book.genre}.`;
+      summary = await queryLLM(prompt);
+    } else {
+      // Generate summary for books not in the database using external API and LLM
+      const response = await axios.get(`https://openlibrary.org/search.json?q=${encodeURIComponent(title)}`);
+      const docs = response.data.docs;
+      if (docs && docs.length > 0) {
+        const doc = docs[0];
+        const prompt = `Generate a brief 3-sentence summary for the book titled '${doc.title}' authored by ${doc.author_name ? doc.author_name[0] : 'Unknown author'} published in ${doc.first_publish_year || 'unknown year'}.`;
+        summary = await queryLLM(prompt);
+      } else {
+        summary = 'No summary available for the requested book.';
+      }
+    }
+
+    // Return the generated summary
+    return summary;
   } catch (error) {
     console.error('Error generating book summary:', error);
-    throw new Error('Could not generate book summary');
+    throw error;
   }
 };
 
@@ -108,29 +164,6 @@ const searchBookByGenre = async (genre) => {
 };
 
 // Helper function to check pending fines for a student
-const checkPendingFines = async (studentId) => {
-  try {
-    // Find all borrowed books for the student where return_date is null (not returned)
-    const borrowedBooks = await BorrowedBook.find({ student_id: studentId, return_date: null });
-
-    let totalFine = 0;
-
-    borrowedBooks.forEach(borrowedBook => {
-      const now = new Date();
-      const daysLate = Math.floor((now - borrowedBook.due_date) / (1000 * 60 * 60 * 24));  // Calculate days late
-
-      if (daysLate > 0) {
-        totalFine += daysLate * 10;  // Fine of $10 per day late
-      }
-    });
-
-    return { totalFine };
-  } catch (error) {
-    console.error('Error checking pending fines:', error);
-    throw error;
-  }
-};
-
 // Helper function to get all books in the library
 const getAllBooks = async () => {
   try {
@@ -244,14 +277,6 @@ const returnBook = async (studentId, bookId) => {
   }
 };
 
-const getGeneralKnowledge = async ({author, title}) => {
-  const x = await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(title)}`)
-
-  const data = await x.json()
-
-  return ({db:true, data})
-}
-
 module.exports = {
   checkBorrowedBooks,
   searchBookByTitle,
@@ -263,5 +288,8 @@ module.exports = {
   getBookLocation,
   getAllBooks,
   returnBook,
-  getGeneralKnowledge
+  generateBookSummary,
+  checkBorrowedBooks,
+  checkPendingFines,
+  updateFinesDaily,
 };

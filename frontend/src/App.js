@@ -1,54 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'; // Updated imports
+import Navbar from './components/Navbar';
+import Login from './components/Login';
+import AdminLogin from './components/AdminLogin';
+import ProtectedRoute from './components/ProtectedRoute';
+import Dashboard from './components/Dashboard';
+import BorrowedBooks from './components/BorrowedBooks';
 import BookList from './components/BookList';
 import AddBook from './components/AddBook';
 import ChatInterface from './components/ChatInterface';
 
-function App() {
-  const [availableBooks, setAvailableBooks] = useState([]);
-
-  useEffect(() => {
-    // Fetch available books from the backend
-    const fetchAvailableBooks = async () => {
-      try {
-        const response = await fetch('/api/availableBooks'); // Adjust the API endpoint as needed
-        const data = await response.json();
-        setAvailableBooks(data);
-      } catch (error) {
-        console.error('Error fetching available books:', error);
-      }
-    };
-
-    fetchAvailableBooks();
-  }, []);
-
+const App = () => {
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-blue-600 text-white p-6 text-center">
-        <h1 className="text-4xl font-bold">Library Management System</h1>
-        <p className="text-lg mt-2">Powered by AI for easy library access</p>
-      </header>
-      
-      <main className="container mx-auto p-6 space-y-8">
-        {/* Chat interface */}
-        <section className="bg-white shadow-lg rounded-lg p-6">
-          <h2 className="text-2xl font-semibold mb-4">Ask the Library System</h2>
-          <ChatInterface userType="student" studentId="21ad001" />
-        </section>
-        
-        {/* Add Book Component */}
-        <section className="bg-white shadow-lg rounded-lg p-6">
-          <h2 className="text-2xl font-semibold mb-4">Add a New Book</h2>
-          <AddBook />
-        </section>
-        
-        {/* List of available books */}
-        <section className="bg-white shadow-lg rounded-lg p-6">
-          <h2 className="text-2xl font-semibold mb-4">Books Available in the Library</h2>
-          <BookList books={availableBooks} />
-        </section>
-      </main>
-    </div>
+    <Router>
+      <Navbar />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path= "/chatinterface" element={<ChatInterface />} />
+          <Route path="/borrowed-books" element={<BorrowedBooks />} />
+          <Route path="/add-book" element={<AddBook />} />
+        </Route>
+
+        {/* Default Route */}
+        <Route path="/" element={<Login />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
