@@ -44,7 +44,39 @@ const ChatInterface = ({ userType, studentId }) => {
     return response.toolResults.map((result, index) => (
       <div key={index} className="result-item border-b p-2">
         <h3 className="text-lg font-bold">Result:</h3>
-        <p>{result.summary || 'No summary available.'}</p>
+        {/* <p>{result.summary || 'No summary available.'}</p> */}
+        <table className="table-auto w-full bg-white shadow-md rounded-lg">
+        <thead>
+          <tr className="bg-gray-200 text-left">
+            <th className="px-4 py-2">Title</th>
+            <th className="px-4 py-2">BookID</th>
+            <th className="px-4 py-2">Author</th>
+            <th className="px-4 py-2">Genre</th>
+            <th className="px-4 py-2">Section</th>
+            <th className="px-4 py-2">Column</th>
+            <th className="px-4 py-2">Available Copies</th>
+          </tr>
+        </thead>
+        <tbody>
+          {result.result.length === 0 ? (
+            <tr>
+              <td colSpan="6" className="text-center py-4">No books available</td>
+            </tr>
+          ) : (
+            result.result.map((book) => (
+              <tr key={book._id}>
+                <td className="border px-4 py-2">{book.title}</td>
+                <td className="border px-4 py-2">{book.book_id}</td>
+                <td className="border px-4 py-2">{book.author}</td>
+                <td className="border px-4 py-2">{book.genre}</td>
+                <td className="border px-4 py-2">{book.section}</td>
+                <td className="border px-4 py-2">{book.column}</td>
+                <td className="border px-4 py-2">{book.available_copies}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
       </div>
     ));
   };

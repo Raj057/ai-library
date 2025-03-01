@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { backend } from '../lib/path';
 
 const AdminLogin = () => {
-  const [adminId, setAdminId] = useState('');
+  const [admin_id, setAdminId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
 
@@ -12,12 +12,12 @@ const AdminLogin = () => {
       const response = await fetch(`${backend}/api/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ admin_id: adminId, password }),
+        body: JSON.stringify({ admin_id: admin_id, password }),
       });
       const data = await response.json();
       if (data.token) {
         localStorage.setItem('token', data.token);
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       } else {
         setError(data.message);
       }
@@ -29,7 +29,7 @@ const AdminLogin = () => {
   return (
     <form onSubmit={handleSubmit}>
       <label>Admin ID:</label>
-      <input type="text" value={adminId} onChange={(event) => setAdminId(event.target.value)} />
+      <input type="text" value={admin_id} onChange={(event) => setAdminId(event.target.value)} />
       <br />
       <label>Password:</label>
       <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} />

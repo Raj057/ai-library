@@ -3,15 +3,13 @@ import { Navigate, Outlet } from 'react-router-dom';
 
 const ProtectedRoute = () => {
   const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role'); // Check role for further validation
 
-  // Redirect if no token is available
   if (!token) {
+    // Redirect to login if no token exists
     return <Navigate to="/login" replace />;
   }
 
-  // Allow access if token exists
-  return <Outlet />;
+  return <Outlet />; // Render protected content
 };
 
 export default ProtectedRoute;

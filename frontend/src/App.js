@@ -22,13 +22,11 @@ const App = () => {
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/book-list" element={<BookList />} />
           <Route path= "/chatinterface" element={<ChatInterface />} />
           <Route path="/borrowed-books" element={<BorrowedBooks />} />
           <Route path="/add-book" element={<AddBook />} />
         </Route>
-
-        {/* Default Route */}
-        <Route path="/" element={<Login />} />
       </Routes>
     </Router>
   );

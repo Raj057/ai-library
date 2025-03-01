@@ -35,6 +35,9 @@ const Navbar = () => {
               </li>
             )}
             <li>
+              <Link to="/book-list">Book List</Link>
+            </li>
+            <li>
               <Link to="/borrowed-books">Borrowed Books</Link>
             </li>
             <li>

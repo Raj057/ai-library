@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const Student = require('../models/Student');
 const BorrowedBook = require('../models/BorrowedBooks');
 const Book = require('../models/Book');
+const { json } = require('body-parser');
 const router = express.Router();
 
 // Middleware for Authentication
@@ -37,6 +38,7 @@ const authorizeUser = (req, res, next) => {
 router.post('/login', async (req, res) => {
   try {
     const { student_id, password } = req.body;
+    console.log(student_id, password)
 
     // Find student by student_id
     const student = await Student.findOne({ student_id });
@@ -67,6 +69,16 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.get('/:id/borrowed-books', authenticateToken, authorizeUser, async (req, res) => {
+  try {
+    const borrowedBooks = await BorrowedBook.find({ student_id: req.params.id, return_date: null }).populate('book_id');
+    res.json(borrowedBooks);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching borrowed books' });
+  }
+});
+
+
 // Borrowed Books
 router.get('/borrowed', authenticateToken, authorizeUser, async (req, res) => {
   console.log(req.user)
@@ -77,16 +89,18 @@ router.get('/borrowed', authenticateToken, authorizeUser, async (req, res) => {
 
     const student = await Student.findById({ _id: req.user.id });
 
-    const books = student["_doc"]["books_borrowed"]
 
+    const booksBoorowed = student["_doc"]["borrowed_books"]
     // res.json(books);
 
-    const data = await Book.find(
+    const bookData = await Book.find(
       {
-        book_id: books
+        book_id: booksBoorowed.map(e => e.book_id)
       })
+    // console.log(JSON.stringify(booksBoorowed, null, 2))
+    // console.log(JSON.stringify(bookData, null, 2))
 
-    res.json({student, books:data});
+    res.json({ student, books: bookData });
   } catch (error) {
     console.error('Error fetching borrowed books:', error);
     res.status(500).json({ message: 'Error fetching borrowed books' });

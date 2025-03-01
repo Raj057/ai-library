@@ -33,7 +33,7 @@ app.use((req, res, next) => {
 app.use('/api/books', bookRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/query', llmRoutes);
+app.use('/api/llm', llmRoutes);
 
 
 // MongoDB Connection
